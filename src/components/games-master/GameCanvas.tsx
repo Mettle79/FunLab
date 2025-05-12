@@ -125,9 +125,8 @@ export default function GameCanvas({ selectedCharacter, ringConfig, completionEf
           throw new Error('WebGL not supported')
         }
 
-        app = new PIXI.Application()
-        await app.init({
-          canvas: canvas,
+        app = new PIXI.Application({
+          view: canvas,
           width: 400,
           height: 400,
           backgroundColor: 0xffffff,
@@ -135,7 +134,7 @@ export default function GameCanvas({ selectedCharacter, ringConfig, completionEf
           resolution: window.devicePixelRatio || 1,
           autoDensity: true,
           powerPreference: 'high-performance',
-          context: gl as WebGL2RenderingContext
+          hello: true
         })
 
         console.log('PixiJS initialized with WebGL context')
