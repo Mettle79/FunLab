@@ -66,7 +66,7 @@ export default function TerminalTycoon() {
     if (tasks.every(task => task.completed) && !showCompletion) {
       setShowCompletion(true)
     }
-  }, [tasks])
+  }, [tasks, showCompletion])
 
   const handleCommand = (e: React.FormEvent) => {
     e.preventDefault()
@@ -182,7 +182,7 @@ Status: System Secure
               🎉 Congratulations! 🎉
             </h1>
             <p className="mb-8 text-xl text-gray-700">
-              You've mastered the terminal basics! You can now:
+              You&apos;ve mastered the terminal basics! You can now:
             </p>
             <ul className="mb-8 list-inside list-disc text-left text-lg text-gray-700">
               <li>Navigate through directories using the command line</li>
@@ -250,29 +250,32 @@ Status: System Secure
                   type="text"
                   value={command}
                   onChange={(e) => setCommand(e.target.value)}
-                  className="ml-2 flex-1 border-none !bg-transparent text-green-400 placeholder:text-gray-600 focus:outline-none focus:ring-0"
-                  placeholder="Type 'help' or 'tasks' to get started"
-                  autoFocus
+                  className="flex-1 bg-transparent border-none focus:ring-0 text-green-400"
+                  placeholder="Enter command..."
                 />
               </form>
             </Card>
 
-            {/* Task List Panel */}
-            <Card className="w-80 !bg-gray-900 p-4 font-mono shadow-xl">
-              <h2 className="mb-4 text-lg font-semibold text-green-400 border-b border-green-500/20 pb-2">
-                $ Tasks to Complete:
+            {/* Tasks Panel */}
+            <Card className="w-80 !bg-orange-200 p-4 shadow-xl">
+              <h2 className="mb-4 border-b border-orange-300 pb-2 text-lg font-semibold text-orange-900">
+                Tasks to Complete
               </h2>
               <div className="space-y-3">
                 {tasks.map(task => (
-                  <div key={task.id} className="rounded border border-green-500/20 bg-gray-900/50 p-3">
+                  <div key={task.id} className="rounded-lg bg-orange-100 p-3 shadow-sm">
                     <div className="flex items-start gap-3">
-                      <div className="mt-1 text-green-400">
-                        {task.completed ? '✓' : '○'}
+                      <div className="mt-1 flex h-5 w-5 items-center justify-center rounded-full border border-orange-300 bg-orange-50">
+                        {task.completed && (
+                          <svg className="h-3.5 w-3.5 text-orange-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        )}
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-green-400">{task.description}</p>
-                        {!task.completed && (
-                          <p className="mt-1 text-xs text-green-500/70">$ {task.hint}</p>
+                        <p className="text-sm font-medium text-orange-900">{task.description}</p>
+                        {!task.completed && task.hint && (
+                          <p className="mt-1 text-xs text-orange-700">{task.hint}</p>
                         )}
                       </div>
                     </div>
@@ -280,14 +283,6 @@ Status: System Secure
                 ))}
               </div>
             </Card>
-          </div>
-
-          <div className="mt-6 text-center">
-            <p className="text-lg text-gray-900">
-              Complete all tasks to become a terminal master! Type{" "}
-              <code className="rounded bg-gray-800 px-2 py-1 text-green-400">tasks</code>
-              {" "}to see your progress.
-            </p>
           </div>
         </div>
       </div>

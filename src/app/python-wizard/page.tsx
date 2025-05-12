@@ -15,6 +15,10 @@ interface Task {
   completedAt?: number
 }
 
+interface Context {
+  [key: string]: string | number
+}
+
 export default function Page() {
   const router = useRouter()
   const [code, setCode] = useState('# Write your Python code here!\n# Try completing the tasks below.')
@@ -83,11 +87,11 @@ export default function Page() {
   const handleRunCode = () => {
     try {
       // Create a context for variables
-      const context: { [key: string]: any } = {}
+      const context: Context = {}
       let result = ""
 
       // Helper function to evaluate expressions
-      const evaluateExpression = (expr: string): any => {
+      const evaluateExpression = (expr: string): string | number => {
         console.log('Evaluating expression:', expr)
         // Handle string literals
         if (expr.startsWith('"') || expr.startsWith("'")) {
@@ -159,7 +163,7 @@ export default function Page() {
               console.log('Found expression in f-string:', expr)
               const evaluated = evaluateExpression(expr)
               console.log('Evaluated expression:', evaluated)
-              return evaluated !== undefined ? evaluated : expr
+              return evaluated !== undefined ? String(evaluated) : expr
             })
             
             console.log('Final f-string result:', fString)
@@ -168,7 +172,7 @@ export default function Page() {
             // Handle regular print
             const value = evaluateExpression(content)
             console.log('Regular print value:', value)
-            result += value + "\n"
+            result += String(value) + "\n"
           }
           continue
         }
@@ -184,7 +188,7 @@ export default function Page() {
       }
 
       console.log('Final result:', result)
-      setOutput(result || "No output")
+      const finalOutput = result || "No output"
 
       // Check task completion after running the code
       setTasks(prevTasks => 
@@ -194,7 +198,7 @@ export default function Page() {
             return task
           }
           // Otherwise, check if it's completed now
-          const isCompleted = task.test(code, result || "No output")
+          const isCompleted = task.test(code, finalOutput)
           return {
             ...task,
             completed: isCompleted,
@@ -203,7 +207,8 @@ export default function Page() {
         })
       )
     } catch (error) {
-      setOutput(`Error: ${error instanceof Error ? error.message : 'Invalid Python syntax'}`)
+      const errorMessage = error instanceof Error ? error.message : 'Invalid Python syntax'
+      console.error('Error:', errorMessage)
     }
   }
 
@@ -250,26 +255,24 @@ export default function Page() {
                 <textarea
                   value={code}
                   onChange={(e) => setCode(e.target.value)}
-                  className="w-full h-[300px] p-4 font-mono text-sm bg-gray-900 text-white rounded-lg resize-none focus:outline-none"
-                  spellCheck={false}
+                  className="w-full h-64 p-4 font-mono text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  placeholder="Write your Python code here..."
                 />
                 <div className="mt-4 flex justify-end">
-                  <button
+                  <Button
                     onClick={handleRunCode}
-                    className="px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+                    className="bg-orange-500 hover:bg-orange-600"
                   >
                     Run Code
-                  </button>
+                  </Button>
                 </div>
               </div>
 
               <div className="bg-white rounded-xl shadow-lg p-6">
                 <h2 className="text-2xl font-semibold mb-4">Output</h2>
-                <div className="bg-gray-100 rounded-lg p-4 min-h-[100px]">
-                  <pre className="whitespace-pre-wrap font-mono text-sm">
-                    {output || "# Your output will appear here"}
-                  </pre>
-                </div>
+                <pre className="w-full h-32 p-4 font-mono text-sm bg-gray-50 rounded-lg overflow-auto">
+                  {output}
+                </pre>
               </div>
 
               <div className="flex justify-center">

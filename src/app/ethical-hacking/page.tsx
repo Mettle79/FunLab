@@ -6,12 +6,6 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
 
 type Task = {
   id: number
@@ -49,7 +43,6 @@ export default function EthicalHacking() {
   const [showCompletion, setShowCompletion] = useState(false)
   const [answer, setAnswer] = useState("")
   const [error, setError] = useState("")
-  const [showSource, setShowSource] = useState(false)
   const [foundHighRisk, setFoundHighRisk] = useState(false)
 
   useEffect(() => {
@@ -63,7 +56,7 @@ export default function EthicalHacking() {
     
     // Special case for finding the high-risk vulnerability
     if (userAnswer.toLowerCase() === "ethical_hacker") {
-      setError("🎉 Excellent work! You've found a high-risk vulnerability - exposed authentication credentials in console logs! This is exactly the kind of security issue ethical hackers help identify and fix.")
+      setError("🎉 Excellent work! You&apos;ve found a high-risk vulnerability - exposed authentication credentials in console logs! This is exactly the kind of security issue ethical hackers help identify and fix.")
       setAnswer("")
       setFoundHighRisk(true)
       return
@@ -80,7 +73,7 @@ export default function EthicalHacking() {
       setAnswer("")
       setError("")
     } else {
-      setError("That's not the right answer. Keep looking!")
+      setError("That&apos;s not the right answer. Keep looking!")
     }
   }
 
@@ -88,7 +81,7 @@ export default function EthicalHacking() {
     if (tasks.every(task => task.completed) && !showCompletion) {
       setShowCompletion(true)
     }
-  }, [tasks])
+  }, [tasks, showCompletion])
 
   if (showCompletion) {
     return (
@@ -109,7 +102,7 @@ export default function EthicalHacking() {
               🎉 Congratulations! 🎉
             </h1>
             <p className="mb-8 text-xl text-gray-700">
-              You've completed the Ethical Hacking challenge! You've learned:
+              You&apos;ve completed the Ethical Hacking challenge! You&apos;ve learned:
             </p>
             <ul className="mb-8 list-inside list-disc text-left text-lg text-gray-700">
               <li>How to inspect webpage source code</li>
@@ -249,47 +242,6 @@ export default function EthicalHacking() {
                 </div>
               </Card>
             </div>
-
-            {/* Task List Panel */}
-            <Card className="w-80 !bg-orange-200 p-4 shadow-xl">
-              <h2 className="mb-4 border-b border-orange-300 pb-2 text-lg font-semibold text-orange-900">
-                Tasks to Complete
-              </h2>
-              {foundHighRisk && (
-                <div className="mb-4 rounded-lg bg-orange-100 p-3 text-center">
-                  <span className="text-2xl">🏆</span>
-                  <p className="mt-1 text-sm font-medium text-orange-900">High-Risk Vulnerability Found!</p>
-                </div>
-              )}
-              <div className="space-y-3">
-                {tasks.map(task => (
-                  <div key={task.id} className="rounded-lg bg-orange-100 p-3 shadow-sm">
-                    <div className="flex items-start gap-3">
-                      <div className="mt-1 flex h-5 w-5 items-center justify-center rounded-full border border-orange-300 bg-orange-50">
-                        {task.completed && (
-                          <svg className="h-3.5 w-3.5 text-orange-500" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
-                        )}
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-orange-900">{task.description}</p>
-                        {!task.completed && task.hint && (
-                          <p className="mt-1 text-xs text-orange-700">{task.hint}</p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          </div>
-
-          <div className="mt-6 text-center">
-            <p className="text-lg text-gray-900">
-              Use the "View Page Source" button to inspect the code and find hidden information.
-              Remember: Ethical hacking helps make systems more secure!
-            </p>
           </div>
         </div>
       </div>

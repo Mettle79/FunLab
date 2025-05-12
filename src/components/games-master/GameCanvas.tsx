@@ -18,13 +18,15 @@ interface Particle extends PIXI.Graphics {
   vy: number
 }
 
+type TickerFunction = PIXI.TickerCallback<any>
+
 export default function GameCanvas({ selectedCharacter, ringConfig, completionEffect, isGameStarted }: GameCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const appRef = useRef<PIXI.Application | null>(null)
   const catRef = useRef<PIXI.Sprite | null>(null)
   const keysRef = useRef<{ [key: string]: boolean }>({})
   const ringsRef = useRef<PIXI.Container[]>([])
-  const fireworksRef = useRef<PIXI.Graphics[]>([])
+  const fireworksRef = useRef<(PIXI.Graphics | TickerFunction)[]>([])
 
   // Handle keyboard events
   useEffect(() => {
@@ -74,7 +76,7 @@ export default function GameCanvas({ selectedCharacter, ringConfig, completionEf
                 item.destroy()
               }
             } else if (typeof item === 'function') {
-              appRef.current?.ticker.remove(item)
+              appRef.current?.ticker.remove(item as PIXI.TickerCallback<any>)
             }
           })
           fireworksRef.current = []
@@ -123,9 +125,8 @@ export default function GameCanvas({ selectedCharacter, ringConfig, completionEf
           throw new Error('WebGL not supported')
         }
 
-        app = new PIXI.Application()
-        await app.init({
-          canvas: canvas,
+        app = new PIXI.Application({
+          view: canvas,
           width: 400,
           height: 400,
           backgroundColor: 0xffffff,
@@ -133,7 +134,7 @@ export default function GameCanvas({ selectedCharacter, ringConfig, completionEf
           resolution: window.devicePixelRatio || 1,
           autoDensity: true,
           powerPreference: 'high-performance',
-          context: gl as WebGL2RenderingContext
+          hello: true
         })
 
         console.log('PixiJS initialized with WebGL context')
@@ -253,264 +254,174 @@ export default function GameCanvas({ selectedCharacter, ringConfig, completionEf
           }
 
           ringsRef.current = rings
-          console.log(`Successfully placed ${rings.length} rings`)
+          console.log('All rings placed successfully')
         }
 
-        // Initialize the game
         await placeRings()
-        console.log('Game initialization complete')
 
-        // Add game loop for movement
-        let frameCount = 0
+        // Game loop
         const gameLoop = () => {
-          frameCount++
-          if (frameCount % 60 === 0) {
-            console.log('Game loop running, frame:', frameCount)
+          if (!app || !catRef.current) return
+
+          const cat = catRef.current
+          const speed = 5
+
+          // Handle movement
+          if (keysRef.current['ArrowUp']) {
+            cat.y -= speed
+          }
+          if (keysRef.current['ArrowDown']) {
+            cat.y += speed
+          }
+          if (keysRef.current['ArrowLeft']) {
+            cat.x -= speed
+          }
+          if (keysRef.current['ArrowRight']) {
+            cat.x += speed
           }
 
-          const character = catRef.current
-          if (!character || !app || !app.screen) {
-            console.log('Missing character or app:', { character: !!character, app: !!app })
-            return
-          }
+          // Keep cat within bounds
+          cat.x = Math.max(0, Math.min(app.screen.width, cat.x))
+          cat.y = Math.max(0, Math.min(app.screen.height, cat.y))
 
-          const speed = 2
-          const keys = keysRef.current
-
-          // Store previous position
-          const prevX = characterContainer.x
-          const prevY = characterContainer.y
-
-          // Update position based on key presses with boundary checking
-          if (keys['ArrowUp']) {
-            const newY = characterContainer.y - speed
-            if (newY >= 0) {
-              characterContainer.y = newY
-              console.log('Moving up:', characterContainer.y)
-            }
-          }
-          if (keys['ArrowDown']) {
-            const newY = characterContainer.y + speed
-            if (newY <= app.screen.height) {
-              characterContainer.y = newY
-              console.log('Moving down:', characterContainer.y)
-            }
-          }
-          if (keys['ArrowLeft']) {
-            const newX = characterContainer.x - speed
-            if (newX >= 0) {
-              characterContainer.x = newX
-              console.log('Moving left:', characterContainer.x)
-            }
-          }
-          if (keys['ArrowRight']) {
-            const newX = characterContainer.x + speed
-            if (newX <= app.screen.width) {
-              characterContainer.x = newX
-              console.log('Moving right:', characterContainer.x)
-            }
-          }
-
-          // Force position update if changed
-          if (characterContainer.x !== prevX || characterContainer.y !== prevY) {
-            characterContainer.position.set(characterContainer.x, characterContainer.y)
-            console.log('Position updated:', { x: characterContainer.x, y: characterContainer.y })
-          }
-
-          // Check for ring collection
-          const ringsToRemove: number[] = []
+          // Check for ring collisions
           ringsRef.current.forEach((ring, index) => {
-            const distance = Math.sqrt(
-              Math.pow(characterContainer.x - ring.x, 2) +
-              Math.pow(characterContainer.y - ring.y, 2)
-            )
-            if (distance < 30) { // Collection radius
+            if (!ring.parent) return
+
+            const dx = cat.x - ring.x
+            const dy = cat.y - ring.y
+            const distance = Math.sqrt(dx * dx + dy * dy)
+
+            if (distance < 30) {
+              // Remove the ring
               if (ring.parent) {
                 ring.parent.removeChild(ring)
                 ring.destroy()
               }
-              ringsToRemove.push(index)
-              console.log('Ring collected! Rings remaining:', ringsRef.current.length - 1)
+              ringsRef.current.splice(index, 1)
+
+              // Check if all rings are collected
+              if (ringsRef.current.length === 0) {
+                if (completionEffect === "fireworks") {
+                  showFireworks()
+                } else {
+                  showGameOver()
+                }
+              }
             }
           })
-
-          // Remove collected rings in reverse order to maintain indices
-          for (let i = ringsToRemove.length - 1; i >= 0; i--) {
-            ringsRef.current.splice(ringsToRemove[i], 1)
-          }
-
-          // Check if all rings are collected
-          if (ringsRef.current.length === 0) {
-            if (completionEffect === "gameOver") {
-              showGameOver()
-            } else {
-              showFireworks()
-            }
-          }
-
-          // Log position every 60 frames
-          if (frameCount % 60 === 0) {
-            console.log('Character position:', { x: characterContainer.x, y: characterContainer.y })
-          }
         }
 
         app.ticker.add(gameLoop)
-        console.log('Game loop added to ticker')
+
+        return () => {
+          if (app) {
+            app.ticker.remove(gameLoop)
+          }
+        }
       } catch (error) {
-        console.error("Error initializing PixiJS:", error)
+        console.error('Error initializing game:', error)
       }
     }
 
     initApp()
 
     return () => {
-      if (appRef.current) {
-        try {
-          // Stop the ticker first
-          appRef.current.ticker.stop()
-          
-          // Remove all children from stage
-          while (appRef.current.stage.children.length > 0) {
-            appRef.current.stage.removeChild(appRef.current.stage.children[0])
-          }
-          
-          // Clean up fireworks and their tickers
-          fireworksRef.current.forEach(item => {
-            if (item instanceof PIXI.Graphics) {
-              if (item.parent) {
-                item.parent.removeChild(item)
-                item.destroy()
-              }
-            } else if (typeof item === 'function') {
-              appRef.current?.ticker.remove(item)
-            }
-          })
-          fireworksRef.current = []
-          
-          // Clear the WebGL context
-          const gl = canvasRef.current?.getContext('webgl2') || canvasRef.current?.getContext('webgl')
-          if (gl) {
-            // Clear all buffers
-            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT)
-            
-            // Force context loss
-            const loseContext = gl.getExtension('WEBGL_lose_context')
-            if (loseContext) {
-              loseContext.loseContext()
-            }
-            
-            // Clear any remaining shader programs
-            const maxAttribs = gl.getParameter(gl.MAX_VERTEX_ATTRIBS)
-            for (let i = 0; i < maxAttribs; i++) {
-              gl.disableVertexAttribArray(i)
-            }
-          }
-          
-          // Destroy the application
-          appRef.current.destroy(true, true)
-          appRef.current = null
-          catRef.current = null
-          ringsRef.current = []
-        } catch (error) {
-          console.error("Error cleaning up PixiJS application:", error)
-        }
+      if (app) {
+        app.destroy(true, true)
       }
     }
-  }, [selectedCharacter, ringConfig, completionEffect, isGameStarted])
+  }, [isGameStarted, selectedCharacter, ringConfig, completionEffect])
 
   const showGameOver = () => {
     if (!appRef.current) return
-    
-    const gameOverText = new PIXI.Text("Game Over!", {
-      fontFamily: "Arial",
+
+    const app = appRef.current
+    const graphics = new PIXI.Graphics()
+    graphics.beginFill(0x000000, 0.7)
+    graphics.drawRect(0, 0, app.screen.width, app.screen.height)
+    graphics.endFill()
+
+    const text = new PIXI.Text('Game Over!', {
+      fontFamily: 'Arial',
       fontSize: 36,
-      fill: 0xff0000,
-      align: "center"
+      fill: 0xFFFFFF,
+      align: 'center'
     })
-    gameOverText.anchor.set(0.5)
-    gameOverText.x = appRef.current.screen.width / 2
-    gameOverText.y = appRef.current.screen.height / 2
-    appRef.current.stage.addChild(gameOverText)
+    text.anchor.set(0.5)
+    text.x = app.screen.width / 2
+    text.y = app.screen.height / 2
+
+    app.stage.addChild(graphics)
+    app.stage.addChild(text)
   }
 
   const createFirework = (x: number, y: number) => {
-    if (!appRef.current) return []
-    
+    if (!appRef.current) return
+
+    const app = appRef.current
     const particles: Particle[] = []
-    for (let i = 0; i < 20; i++) {
+    const particleCount = 50
+
+    for (let i = 0; i < particleCount; i++) {
       const particle = new PIXI.Graphics() as Particle
-      particle.beginFill(Math.random() * 0xffffff)
+      particle.beginFill(Math.random() * 0xFFFFFF)
       particle.drawCircle(0, 0, 2)
       particle.endFill()
-      
-      const angle = Math.random() * Math.PI * 2
-      const speed = Math.random() * 5 + 2
-      particle.vx = Math.cos(angle) * speed
-      particle.vy = Math.sin(angle) * speed
-      
       particle.x = x
       particle.y = y
-      appRef.current.stage.addChild(particle)
+      particle.vx = (Math.random() - 0.5) * 8
+      particle.vy = (Math.random() - 0.5) * 8
+      app.stage.addChild(particle)
       particles.push(particle)
     }
-    
-    return particles
+
+    const updateParticles = () => {
+      let allDead = true
+      particles.forEach(particle => {
+        particle.x += particle.vx
+        particle.y += particle.vy
+        particle.vy += 0.1 // gravity
+        particle.alpha -= 0.01
+
+        if (particle.alpha > 0) {
+          allDead = false
+        } else {
+          particle.destroy()
+        }
+      })
+
+      if (allDead) {
+        app.ticker.remove(updateParticles)
+      }
+    }
+
+    app.ticker.add(updateParticles)
+    fireworksRef.current.push(updateParticles)
   }
 
   const showFireworks = () => {
     if (!appRef.current) return
-    
-    const fireworks: Particle[] = []
-    
-    for (let i = 0; i < 3; i++) {
+
+    const app = appRef.current
+    const fireworkCount = 5
+    const interval = 500
+
+    for (let i = 0; i < fireworkCount; i++) {
       setTimeout(() => {
-        if (!appRef.current) return // Check if app still exists
-        
-        const x = Math.random() * appRef.current.screen.width
-        const y = Math.random() * appRef.current.screen.height
-        const newFireworks = createFirework(x, y)
-        fireworks.push(...newFireworks)
-        fireworksRef.current.push(...newFireworks)
-        
-        // Store the ticker function reference
-        const tickerFunction = () => {
-          if (!appRef.current) return // Check if app still exists
-          
-          newFireworks.forEach(particle => {
-            particle.x += particle.vx
-            particle.y += particle.vy
-            particle.alpha -= 0.02
-            
-            if (particle.alpha <= 0) {
-              if (particle.parent) {
-                particle.parent.removeChild(particle)
-              }
-            }
-          })
-        }
-        
-        // Add the ticker and store its reference
-        const ticker = appRef.current.ticker.add(tickerFunction)
-        
-        // Store the ticker reference for cleanup
-        fireworksRef.current.push(ticker as any)
-      }, i * 1000)
+        const x = Math.random() * app.screen.width
+        const y = Math.random() * app.screen.height
+        createFirework(x, y)
+      }, i * interval)
     }
   }
 
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center">
-      {isGameStarted ? (
-        <canvas 
-          key={`canvas-${Date.now()}`}
-          ref={canvasRef} 
-          className="w-[400px] h-[400px] border-2 border-gray-300 rounded-lg" 
-        />
-      ) : (
-        <div className="w-[400px] h-[400px] border-2 border-gray-300 rounded-lg flex items-center justify-center">
-          <p className="text-gray-500">Game stopped</p>
-        </div>
-      )}
-    </div>
+    <canvas
+      ref={canvasRef}
+      width={400}
+      height={400}
+      className="border-2 border-orange-500 rounded-lg"
+    />
   )
 } 
