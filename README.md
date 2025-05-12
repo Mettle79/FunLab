@@ -37,4 +37,8 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 ## Deploy on Azure
 
-This project is deployed on Azure Static Web Apps. The deployment is automated through GitHub Actions.
+This project is deployed on Azure Static Web Apps. The deployment process is automated through GitHub Actions.
+
+## Deployment Status
+
+This project is deployed on Azure Static Web Apps. The deployment process is automated through GitHub Actions.
