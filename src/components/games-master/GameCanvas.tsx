@@ -18,7 +18,7 @@ interface Particle extends PIXI.Graphics {
   vy: number
 }
 
-type TickerFunction = (ticker: PIXI.Ticker) => void
+type TickerFunction = PIXI.TickerCallback<any>
 
 export default function GameCanvas({ selectedCharacter, ringConfig, completionEffect, isGameStarted }: GameCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -76,7 +76,7 @@ export default function GameCanvas({ selectedCharacter, ringConfig, completionEf
                 item.destroy()
               }
             } else if (typeof item === 'function') {
-              appRef.current?.ticker.remove(item)
+              appRef.current?.ticker.remove(item as PIXI.TickerCallback<any>)
             }
           })
           fireworksRef.current = []
