@@ -27,9 +27,9 @@ jobs:
           action: "upload"
           app_location: "/"
           api_location: ""
-          output_location: ".next"
+          output_location: "out"
           app_build_command: "npm install && npm run build"
-          app_artifact_location: ".next"
+          app_artifact_location: "out"
           is_static_export: true
 
   close_pull_request_job:
