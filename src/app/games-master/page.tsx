@@ -1,12 +1,11 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState } from "react"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
 import CharacterSelector from "@/components/games-master/CharacterSelector"
 import RingSelector from "@/components/games-master/RingSelector"
-import CompletionEffectSelector from "@/components/games-master/CompletionEffectSelector"
 import GameCanvas from "@/components/games-master/GameCanvas"
 import { Button } from "@/components/ui/button"
 
@@ -55,7 +54,7 @@ export default function GamesMaster() {
               🎮 Game Design Mastered! 🎮
             </h1>
             <p className="mb-8 text-xl text-gray-700">
-              You've completed the Games Master challenge! You've learned:
+              You&apos;ve completed the Games Master challenge! You&apos;ve learned:
             </p>
             <ul className="mb-8 list-inside list-disc text-left text-lg text-gray-700">
               <li>How character selection affects gameplay experience</li>
