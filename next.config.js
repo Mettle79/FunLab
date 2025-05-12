@@ -6,7 +6,8 @@ const nextConfig = {
   },
   experimental: {
     esmExternals: true
-  }
+  },
+  trailingSlash: true
 }
 
 module.exports = nextConfig 
