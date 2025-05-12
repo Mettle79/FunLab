@@ -39,6 +39,7 @@ export default function GameCanvas({ characterImage }: GameCanvasProps) {
     }
   }, [])
 
+  // Initialize and cleanup game
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
@@ -47,18 +48,25 @@ export default function GameCanvas({ characterImage }: GameCanvasProps) {
 
     const initApp = async () => {
       try {
-        app = new PIXI.Application()
-        await app.init({
-          canvas: canvas,
+        // Ensure we have a valid WebGL context
+        const gl = canvas.getContext('webgl2') || canvas.getContext('webgl')
+        if (!gl) {
+          throw new Error('WebGL not supported')
+        }
+
+        app = new PIXI.Application({
+          view: canvas,
           width: 400,
           height: 400,
           backgroundColor: 0xffffff,
           antialias: true,
           resolution: window.devicePixelRatio || 1,
-          autoDensity: true
+          autoDensity: true,
+          powerPreference: 'high-performance',
+          hello: true
         })
 
-        console.log('PixiJS initialized')
+        console.log('PixiJS initialized with WebGL context')
         appRef.current = app
 
         // Create a container for the cat
@@ -159,21 +167,15 @@ export default function GameCanvas({ characterImage }: GameCanvasProps) {
         app.ticker.add(gameLoop)
         console.log('Game loop added to ticker')
       } catch (error) {
-        console.error("Error initializing PixiJS:", error)
+        console.error('Error initializing game:', error)
       }
     }
 
     initApp()
 
     return () => {
-      if (appRef.current) {
-        try {
-          appRef.current.destroy(true, true)
-          appRef.current = null
-          catRef.current = null
-        } catch (error) {
-          console.error("Error destroying PixiJS application:", error)
-        }
+      if (app) {
+        app.destroy(true, true)
       }
     }
   }, [])
